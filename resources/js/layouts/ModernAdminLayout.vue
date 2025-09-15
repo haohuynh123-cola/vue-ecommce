@@ -466,9 +466,7 @@ const isAuthLoading = ref(true);
 // Watch for auth state changes
 watch(
     () => authStore.isAuthenticated,
-    (newValue, oldValue) => {
-        console.log("Auth state changed:", { oldValue, newValue });
-    },
+    (newValue, oldValue) => {},
     { immediate: true }
 );
 
@@ -477,7 +475,6 @@ const toggleSidebar = () => {
 };
 
 const handleNavigation = (routeName) => {
-    console.log(`Navigating to ${routeName}`);
     if (window.innerWidth < 1024) {
         sidebarOpen.value = false;
     }
@@ -524,10 +521,6 @@ onMounted(async () => {
     }
 
     isAuthLoading.value = false;
-    console.log(
-        "Auth loading completed, isAuthenticated:",
-        authStore.isAuthenticated
-    );
 });
 
 onUnmounted(() => {

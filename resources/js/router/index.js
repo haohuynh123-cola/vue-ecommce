@@ -69,7 +69,6 @@ const router = createRouter({
 
 // Navigation guards
 router.beforeEach(async (to, from, next) => {
-    console.log(`Navigation: ${from.path} → ${to.path}`);
     const authStore = useAuthStore();
 
     // If we have a token but no user, try to fetch user
@@ -86,51 +85,30 @@ router.beforeEach(async (to, from, next) => {
     const isAuthenticated = authStore.isAuthenticated;
     const user = authStore.user;
 
-    console.log("Auth state:", {
-        isAuthenticated,
-        hasUser: !!user,
-        hasToken: !!authStore.token,
-        userRoles: user?.roles,
-    });
-
     // If trying to access login page while authenticated, redirect to dashboard
     if (to.path === "/login" && isAuthenticated) {
-        console.log(
-            "Redirecting from login to dashboard, isAuthenticated:",
-            isAuthenticated
-        );
         next("/");
         return;
     }
 
     // Check if route requires authentication
     if (to.meta.requiresAuth && !isAuthenticated) {
-        console.log(
-            "Route requires auth but user not authenticated, redirecting to login"
-        );
         next("/login");
         return;
     }
 
     // Check if route requires admin privileges
     if (to.meta.requiresAdmin && !isAuthenticated) {
-        console.log(
-            "Route requires admin but user not authenticated, redirecting to login"
-        );
         next("/login");
         return;
     }
 
     // Check if route requires guest (not authenticated)
     if (to.meta.requiresGuest && isAuthenticated) {
-        console.log(
-            "Route requires guest but user is authenticated, redirecting to dashboard"
-        );
         next("/");
         return;
     }
 
-    console.log("Navigation allowed, proceeding to:", to.path);
     next();
 });
 

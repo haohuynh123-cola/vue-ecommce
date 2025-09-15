@@ -111,17 +111,7 @@ const handleLogin = async () => {
     error.value = "";
 
     try {
-        console.log("Starting login process...");
         const result = await authStore.login(form.value);
-        console.log("Login successful, result:", result);
-        console.log("Auth store state after login:", {
-            isAuthenticated: authStore.isAuthenticated,
-            user: authStore.user,
-            token: authStore.token,
-        });
-
-        console.log("Navigating to dashboard...");
-
         // Try multiple navigation methods
         try {
             await router.push("/");
