@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laravel Auth Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5a6fd8;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .message {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .user-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-top: 1rem;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 0.5rem;
+            text-align: center;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .tab.active {
+            background: white;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .token-info {
+            background: #e9ecef;
+            padding: 0.5rem;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            word-break: break-all;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2 style="text-align: center; margin-bottom: 2rem; color: #333;">Laravel Auth Demo</h2>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('login')">Login</button>
+            <button class="tab" onclick="showTab('register')">Register</button>
+        </div>
+
+        <!-- Login Form -->
+        <div id="login-tab" class="tab-content active">
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email:</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password:</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
+        <!-- Register Form -->
+        <div id="register-tab" class="tab-content">
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="registerName">Name:</label>
+                    <input type="text" id="registerName" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">Email:</label>
+                    <input type="email" id="registerEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Password:</label>
+                    <input type="password" id="registerPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPasswordConfirm">Confirm Password:</label>
+                    <input type="password" id="registerPasswordConfirm" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPhone">Phone (optional):</label>
+                    <input type="text" id="registerPhone">
+                </div>
+                <button type="submit">Register</button>
+            </form>
+        </div>
+
+        <!-- User Info (shown after login) -->
+        <div id="userInfo" class="user-info hidden">
+            <h3>Welcome, <span id="userName"></span>!</h3>
+            <p><strong>Email:</strong> <span id="userEmail"></span></p>
+            <p><strong>Phone:</strong> <span id="userPhone"></span></p>
+            <p><strong>Last Login:</strong> <span id="lastLogin"></span></p>
+            <div class="token-info">
+                <strong>Token:</strong> <span id="userToken"></span>
+            </div>
+            <button onclick="logout()" style="margin-top: 1rem;">Logout</button>
+            <button onclick="testProtectedRoute()" style="margin-top: 0.5rem; background: #28a745;">Test Protected
+                Route</button>
+        </div>
+
+        <!-- Message Display -->
+        <div id="message" class="message hidden"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let authToken = localStorage.getItem('auth_token');
+
+        // Check if user is already logged in
+        if (authToken) {
+            loadUserProfile();
+        }
+
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function showMessage(message, type = 'success') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = `message ${type}`;
+            messageDiv.classList.remove('hidden');
+
+            setTimeout(() => {
+                messageDiv.classList.add('hidden');
+            }, 5000);
+        }
+
+        function setLoading(button, loading = true) {
+            button.disabled = loading;
+            button.textContent = loading ? 'Loading...' : button.dataset.originalText;
+        }
+
+        // Login Form Handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const button = e.target.querySelector('button');
+            button.dataset.originalText = button.textContent;
+            setLoading(button, true);
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    authToken = data.data.token;
+                    localStorage.setItem('auth_token', authToken);
+                    showMessage('Login successful!');
+                    loadUserProfile();
+                } else {
+                    showMessage(data.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error: ' + error.message, 'error');
+            } finally {
+                setLoading(button, false);
+            }
+        });
+
+        // Register Form Handler
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const button = e.target.querySelector('button');
+            button.dataset.originalText = button.textContent;
+            setLoading(button, true);
+
+            const formData = {
+                name: document.getElementById('registerName').value,
+                email: document.getElementById('registerEmail').value,
+                password: document.getElementById('registerPassword').value,
+                password_confirmation: document.getElementById('registerPasswordConfirm').value,
+                phone: document.getElementById('registerPhone').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    authToken = data.data.token;
+                    localStorage.setItem('auth_token', authToken);
+                    showMessage('Registration successful!');
+                    loadUserProfile();
+                } else {
+                    showMessage(data.message || 'Registration failed', 'error');
+                    if (data.errors) {
+                        console.error('Validation errors:', data.errors);
+                    }
+                }
+            } catch (error) {
+                showMessage('Network error: ' + error.message, 'error');
+            } finally {
+                setLoading(button, false);
+            }
+        });
+
+        async function loadUserProfile() {
+            if (!authToken) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/profile`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const user = data.data.user;
+                    document.getElementById('userName').textContent = user.name;
+                    document.getElementById('userEmail').textContent = user.email;
+                    document.getElementById('userPhone').textContent = user.phone || 'Not provided';
+                    document.getElementById('lastLogin').textContent = user.last_login_at ?
+                        new Date(user.last_login_at).toLocaleString() : 'Never';
+                    document.getElementById('userToken').textContent = authToken.substring(0, 50) + '...';
+
+                    document.getElementById('userInfo').classList.remove('hidden');
+                    document.querySelectorAll('.tab-content').forEach(tab => {
+                        tab.classList.add('hidden');
+                    });
+                } else {
+                    localStorage.removeItem('auth_token');
+                    authToken = null;
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                localStorage.removeItem('auth_token');
+                authToken = null;
+            }
+        }
+
+        async function logout() {
+            if (!authToken) return;
+
+            try {
+                await fetch(`${API_BASE}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/json',
+                    }
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                localStorage.removeItem('auth_token');
+                authToken = null;
+                document.getElementById('userInfo').classList.add('hidden');
+                showTab('login');
+                showMessage('Logged out successfully');
+            }
+        }
+
+        async function testProtectedRoute() {
+            if (!authToken) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/user`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Protected route accessed successfully!');
+                } else {
+                    showMessage('Failed to access protected route: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Error accessing protected route: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>
